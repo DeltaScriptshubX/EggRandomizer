@@ -1,0 +1,85 @@
+    local pool = petEggs[eggType]
+    if not pool then return nil end
+    local roll = math.random() * 100
+    local cumulative = 0
+    for _, pet in ipairs(pool) do
+        cumulative += pet.chance
+        if roll <= cumulative then
+            return pet.name
+        end
+    end
+    return pool[1].name
+end
+
+-- Create floating text
+local function createFloatingText(egg)
+    local billboard = egg:FindFirstChild("PetLabel")
+    if not billboard then
+        billboard = Instance.new("BillboardGui", egg)
+        billboard.Name = "PetLabel"
+        billboard.Size = UDim2.new(0, 200, 0, 50)
+        billboard.StudsOffset = Vector3.new(0, 3, 0)
+        billboard.AlwaysOnTop = true
+
+        local text = Instance.new("TextLabel", billboard)
+        text.Size = UDim2.new(1, 0, 1, 0)
+        text.BackgroundTransparency = 1
+        text.TextColor3 = Color3.new(1, 1, 1)
+        text.Font = Enum.Font.SourceSansBold
+        text.TextSize = 20
+        text.Text = "Pet: None"
+        text.Name = "PetText"
+    end
+end
+
+-- Update floating text
+local function updateFloatingText(egg, petName)
+    local billboard = egg:FindFirstChild("PetLabel")
+    if billboard then
+        local text = billboard:FindFirstChild("PetText")
+        if text then
+            text.Text = "Pet: " .. petName
+        end
+    end
+end
+
+-- Find egg anywhere
+local function findEgg()
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("Model") and obj.Name == "Egg" then
+            return obj
+        end
+    end
+    return nil
+end
+
+-- Button click
+button.MouseButton1Click:Connect(function()
+    local egg = findEgg()
+    if not egg then
+        label.Text = "Pet: No egg found"
+        return
+    end
+
+    local eggType = egg:GetAttribute("EggType") or "Common"
+    local petName = rollPet(eggType)
+
+    if petName then
+        egg:SetAttribute("PetInside", petName)
+        label.Text = "Pet: " .. petName
+        updateFloatingText(egg, petName)
+        print("âœ… " .. eggType .. " Egg randomized: " .. petName)
+    else
+        label.Text = "Pet: Invalid egg type"
+    end
+end)
+
+-- Auto-create and update floating text
+runService.RenderStepped:Connect(function()
+    local egg = findEgg()
+    if egg then
+        createFloatingText(egg)
+        local petName = egg:GetAttribute("PetInside") or "None"
+        updateFloatingText(egg, petName)
+    end
+end)
